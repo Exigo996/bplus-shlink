@@ -41,5 +41,23 @@ services:
     depends_on:
       - shlink
 
+  shlink-backup:
+    image: prodrigestivill/postgres-backup-local:16
+    restart: unless-stopped
+    depends_on:
+      - shlink-db
+    environment:
+      - POSTGRES_HOST=shlink-db
+      - POSTGRES_DB=shlink
+      - POSTGRES_USER=shlink
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - SCHEDULE=@daily
+      - BACKUP_KEEP_DAYS=7
+      - BACKUP_KEEP_WEEKS=4
+      - BACKUP_KEEP_MONTHS=6
+    volumes:
+      - shlink-backups:/backups
+
 volumes:
   shlink-db-data:
+  shlink-backups:
