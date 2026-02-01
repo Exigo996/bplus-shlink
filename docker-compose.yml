@@ -1,0 +1,45 @@
+services:
+  shlink:
+    image: shlinkio/shlink:stable
+    restart: unless-stopped
+    environment:
+      - DEFAULT_DOMAIN=${DEFAULT_DOMAIN}
+      - IS_HTTPS_ENABLED=true
+      - GEOLITE_LICENSE_KEY=${GEOLITE_LICENSE_KEY:-}
+      - DB_DRIVER=postgres
+      - DB_HOST=shlink-db
+      - DB_NAME=shlink
+      - DB_USER=shlink
+      - DB_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      shlink-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/rest/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  shlink-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=shlink
+      - POSTGRES_USER=shlink
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - shlink-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shlink -d shlink"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  shlink-web:
+    image: shlinkio/shlink-web-client:stable
+    restart: unless-stopped
+    depends_on:
+      - shlink
+
+volumes:
+  shlink-db-data:
